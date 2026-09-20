@@ -1,0 +1,160 @@
+<!--
+    Informa ao navegador que o documento utiliza HTML5.
+    Esta declaração deve aparecer na primeira linha do arquivo.
+-->
+<!DOCTYPE html>
+
+<!--
+    Elemento principal do documento HTML.
+
+    O atributo lang="pt-BR" informa que o conteúdo da página
+    está escrito em português do Brasil.
+
+    Essa informação ajuda navegadores, leitores de tela
+    e mecanismos de busca.
+-->
+<html lang="pt-BR">
+
+<head>
+    <!--
+        Define o conjunto de caracteres utilizado pela página.
+
+        UTF-8 permite apresentar corretamente acentos,
+        cedilhas e outros caracteres especiais.
+    -->
+    <meta charset="UTF-8">
+
+    <!--
+        Configura a área visível da página em dispositivos móveis.
+
+        width=device-width:
+        faz a largura da página acompanhar a largura da tela.
+
+        initial-scale=1.0:
+        define o nível inicial de zoom como 100%.
+    -->
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <!--
+        Define o título exibido na aba do navegador.
+    -->
+    <title>Sistema Acadêmico DS II</title>
+
+    <!--
+        Conecta o arquivo HTML ao arquivo de estilos CSS.
+
+        O caminho ./css/estilo.css indica que:
+        - o navegador começa na pasta onde está index.html;
+        - entra na pasta css;
+        - carrega o arquivo estilo.css.
+    -->
+    <link rel="stylesheet" href="./css/estilo.css">
+
+    <!--
+        Carrega o Model da aplicação.
+
+        O Model contém:
+        - os dados dos alunos;
+        - as validações;
+        - as regras do cadastro;
+        - os métodos de consulta.
+
+        Ele precisa ser carregado antes do Controller,
+        pois o Controller utiliza AlunoModel.
+    -->
+    <script
+        src="./js/model/aluno-model.js"
+        defer>
+    </script>
+
+    <!--
+        Carrega a View da aplicação.
+
+        A View contém:
+        - a leitura dos dados;
+        - as mensagens;
+        - a apresentação dos alunos;
+        - a exibição do JSON.
+
+        Ela também precisa ser carregada antes do Controller,
+        pois o Controller utiliza AlunoView.
+    -->
+    <script
+        src="./js/view/aluno-view.js"
+        defer>
+    </script>
+
+    <!--
+        Carrega o Controller da aplicação.
+
+        O Controller coordena a comunicação entre
+        o Model e a View.
+
+        Ele é carregado por último porque depende
+        dos dois arquivos anteriores.
+    -->
+    <script
+        src="./js/controller/aluno-controller.js"
+        defer>
+    </script>
+
+    <!--
+        O atributo defer informa ao navegador que os arquivos
+        JavaScript devem ser baixados sem interromper a leitura
+        do HTML.
+
+        A execução acontecerá somente depois que a estrutura
+        da página tiver sido analisada.
+
+        Scripts com defer também respeitam a ordem em que
+        aparecem no documento:
+
+        1. aluno-model.js
+        2. aluno-view.js
+        3. aluno-controller.js
+    -->
+</head>
+
+<body>
+    <!--
+        A tag main representa o conteúdo principal da página.
+
+        Normalmente, cada página deve possuir apenas
+        um elemento main.
+    -->
+    <main>
+
+        <!--
+            Título principal da página.
+
+            A tag h1 identifica o assunto mais importante
+            deste documento.
+        -->
+        <h1>Sistema Acadêmico DS II</h1>
+
+        <!--
+            Parágrafo que explica a versão atual do projeto.
+        -->
+        <p>
+            Primeira versão do sistema utilizando MVC e JSON.
+        </p>
+
+        <!--
+            Orientação para que o aluno abra as ferramentas
+            de desenvolvimento e acompanhe a execução.
+
+            Nesta versão, as entradas são realizadas com prompt()
+            e os resultados são apresentados no console.
+        -->
+        <p>
+            Abra o console do navegador para acompanhar
+            a execução.
+        </p>
+    </main>
+</body>
+
+</html>
+
