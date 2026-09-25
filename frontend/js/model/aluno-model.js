@@ -1,32 +1,18 @@
 /*
- * MODEL DE ALUNOS
+ * MODEL DE ALUNOS — VERSÃO 0.3
  *
- * O Model é responsável:
- * - pelos dados dos alunos;
- * - pelas validações;
- * - pelas regras do cadastro.
+ * O Model contém as regras relacionadas ao aluno.
  *
- * Ele não deve utilizar prompt(), alert(), console.log()
- * ou manipular elementos HTML.
+ * Ele não sabe:
+ * - de onde os dados vieram;
+ * - como serão apresentados;
+ * - onde serão armazenados.
  */
 const AlunoModel = {
 
     /*
-     * Array que armazena temporariamente os alunos cadastrados.
-     *
-     * Os dados permanecem apenas na memória do navegador.
-     * Se a página for atualizada, o conteúdo será perdido.
-     */
-    alunos: [],
-
-    /*
-     * Padroniza um valor textual antes de utilizá-lo.
-     *
-     * Se o valor for null ou undefined, devolve uma string vazia.
-     * Isso evita erros ao tentar utilizar métodos de texto.
-     *
-     * String(valor) garante que o valor seja convertido para texto.
-     * trim() remove espaços no começo e no final.
+     * Converte o valor para texto e remove
+     * espaços no começo e no final.
      */
     normalizarTexto(valor) {
         if (valor === null || valor === undefined) {
@@ -37,63 +23,63 @@ const AlunoModel = {
     },
 
     /*
-     * Realiza uma validação simples do e-mail.
-     *
-     * Nesta primeira versão, consideramos válido um endereço
-     * que contenha os caracteres "@" e ".".
-     *
-     * O método includes() verifica se determinado texto
-     * está presente dentro de uma string.
-     *
-     * Como utilizamos &&, as duas condições precisam ser verdadeiras.
+     * Realiza uma validação introdutória do e-mail.
      */
     validarEmail(email) {
         return email.includes("@") && email.includes(".");
     },
 
     /*
-     * Procura um aluno pelo RA.
+     * Procura um aluno pelo RA dentro do array recebido.
      *
-     * O método find() percorre o array até encontrar
-     * o primeiro aluno cujo RA seja igual ao informado.
-     *
-     * Se encontrar, devolve o objeto do aluno.
-     * Se não encontrar, devolve undefined.
+     * Agora o Model não possui mais um array próprio.
+     * A lista é entregue pela camada Service.
      */
-    localizarPorRa(ra) {
-        return AlunoModel.alunos.find(
+    localizarPorRa(alunos, ra) {
+        return alunos.find(
             aluno => aluno.ra === ra
         );
     },
 
     /*
-     * Realiza o cadastro de um aluno.
+     * Calcula o próximo identificador.
      *
-     * O parâmetro dados deverá ser um objeto com:
-     * - ra;
-     * - nome;
-     * - email;
-     * - curso;
-     * - turma.
-     *
-     * Exemplo:
-     *
-     * {
-     *     ra: "2026001",
-     *     nome: "Ana Souza",
-     *     email: "ana@email.com",
-     *     curso: "DSM",
-     *     turma: "2 DSM"
-     * }
+     * Se não houver alunos, o primeiro ID será 1.
      */
-    cadastrar(dados) {
+    gerarProximoId(alunos) {
+        if (alunos.length === 0) {
+            return 1;
+        }
 
         /*
-         * Antes de validar os dados, normalizamos todos os valores.
+         * map() cria um array contendo somente os IDs.
          *
-         * Isso remove espaços desnecessários e evita que valores
-         * null ou undefined causem erros durante a execução.
+         * Exemplo:
+         * alunos = [{ id: 1 }, { id: 4 }]
+         * ids = [1, 4]
          */
+        const ids = alunos.map(
+            aluno => aluno.id
+        );
+
+        /*
+         * Math.max() encontra o maior ID.
+         *
+         * O operador spread (...) entrega cada número
+         * do array como argumento para Math.max().
+         */
+        const maiorId = Math.max(...ids);
+
+        return maiorId + 1;
+    },
+
+    /*
+     * Valida os dados e cria um novo objeto aluno.
+     *
+     * O Model não salva o objeto.
+     * Ele apenas o devolve para a camada Service.
+     */
+    criar(dados, alunos) {
         const ra = AlunoModel.normalizarTexto(dados.ra);
         const nome = AlunoModel.normalizarTexto(dados.nome);
         const email = AlunoModel.normalizarTexto(dados.email);
@@ -101,11 +87,7 @@ const AlunoModel = {
         const turma = AlunoModel.normalizarTexto(dados.turma);
 
         /*
-         * Verifica se algum campo obrigatório está vazio.
-         *
-         * O operador || significa "ou".
-         * Portanto, basta que uma das condições seja verdadeira
-         * para que o cadastro seja recusado.
+         * Verifica os campos obrigatórios.
          */
         if (
             ra === "" ||
@@ -114,13 +96,6 @@ const AlunoModel = {
             curso === "" ||
             turma === ""
         ) {
-            /*
-             * Em vez de mostrar a mensagem diretamente,
-             * o Model devolve um objeto com o resultado.
-             *
-             * O Controller receberá esse objeto e pedirá
-             * para a View apresentar a mensagem.
-             */
             return {
                 sucesso: false,
                 mensagem: "Todos os campos são obrigatórios."
@@ -128,11 +103,7 @@ const AlunoModel = {
         }
 
         /*
-         * Envia o e-mail para o método validarEmail().
-         *
-         * O operador ! significa negação.
-         * Portanto, esta condição será executada quando
-         * o e-mail não for considerado válido.
+         * Verifica o formato básico do e-mail.
          */
         if (!AlunoModel.validarEmail(email)) {
             return {
@@ -142,15 +113,9 @@ const AlunoModel = {
         }
 
         /*
-         * Verifica se já existe um aluno com o mesmo RA.
-         *
-         * localizarPorRa() devolve o objeto encontrado
-         * ou undefined quando o RA não existe.
-         *
-         * Se um objeto for devolvido, a condição será verdadeira
-         * e o cadastro duplicado será impedido.
+         * Verifica se o RA já existe na lista recebida.
          */
-        if (AlunoModel.localizarPorRa(ra)) {
+        if (AlunoModel.localizarPorRa(alunos, ra)) {
             return {
                 sucesso: false,
                 mensagem: "Já existe um aluno com esse RA."
@@ -158,67 +123,27 @@ const AlunoModel = {
         }
 
         /*
-         * Como todas as validações foram aprovadas,
-         * criamos o objeto que representa o novo aluno.
+         * Cria o objeto depois que todas as validações
+         * forem aprovadas.
          */
         const aluno = {
-
-            /*
-             * Nesta versão, o identificador é calculado utilizando
-             * a quantidade de alunos existentes mais um.
-             *
-             * Posteriormente, o banco de dados será responsável
-             * por gerar esse identificador automaticamente.
-             */
-            id: AlunoModel.alunos.length + 1,
-
-            // Dados recebidos e normalizados anteriormente.
+            id: AlunoModel.gerarProximoId(alunos),
             ra: ra,
             nome: nome,
             email: email,
             curso: curso,
             turma: turma,
-
-            /*
-             * Todo novo aluno começa como ativo.
-             *
-             * No futuro, esse valor poderá ser alterado sem
-             * precisarmos apagar definitivamente o cadastro.
-             */
             ativo: true
         };
 
         /*
-         * Adiciona o objeto aluno ao final do array.
+         * Devolve o objeto para a camada Service.
          *
-         * A partir desse momento, o aluno faz parte
-         * dos dados mantidos pelo Model.
-         */
-        AlunoModel.alunos.push(aluno);
-
-        /*
-         * Informa que o cadastro foi concluído com sucesso.
-         *
-         * Também devolvemos o aluno criado para que o Controller
-         * possa encaminhá-lo para a View.
+         * O Model não utiliza push() nem localStorage.
          */
         return {
             sucesso: true,
             aluno: aluno
         };
-    },
-
-    /*
-     * Devolve a lista de alunos cadastrados.
-     *
-     * O operador spread (...) cria um novo array contendo
-     * os mesmos alunos.
-     *
-     * Assim, não devolvemos diretamente o array original
-     * armazenado dentro do Model.
-     */
-    listar() {
-        return [...AlunoModel.alunos];
     }
 };
-
