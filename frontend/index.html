@@ -72,6 +72,18 @@
     </script>
 
     <!--
+        Carrega o Service.
+        Que vem logo após o Model
+
+        Ela é carregada antes do Controller porque
+        o Controller utilizará AlunoView.
+    -->
+    <script
+        src="./js/service/aluno-service.js"
+        defer>
+    </script>
+
+    <!--
         Carrega a camada View.
 
         Nesta versão, a View será responsável por:
@@ -142,7 +154,7 @@
 
             <!-- Identificação da versão desenvolvida. -->
             <p>
-                Versão 0.2 — cadastro de alunos com DOM e eventos
+                Versão 0.3 — Persistência local e camada Service
             </p>
         </div>
     </header>
@@ -290,18 +302,18 @@
                     </div>
                 </div>
 
-                <!--
-                    Botão responsável pelo envio do formulário.
+                <div class="acoes-formulario">
+                    <button type="submit">
+                        Cadastrar aluno
+                    </button>
 
-                    type="submit" faz com que o clique dispare
-                    o evento submit no elemento form.
-
-                    A View observará esse evento por meio
-                    de addEventListener().
-                -->
-                <button type="submit">
-                    Cadastrar aluno
-                </button>
+                    <button
+                        type="button"
+                        id="btn-limpar-dados"
+                        class="botao-secundario">
+                        Limpar dados
+                    </button>
+                </div>
             </form>
 
             <!--
