@@ -1,140 +1,161 @@
 /*
- * SERVICE DE ALUNOS
+ * O AlunoService é responsável pela comunicação
+ * entre o frontend e a API.
  *
- * O Service coordena a utilização do Model
- * e a persistência dos dados.
- *
- * Nesta versão, a persistência utiliza localStorage.
- *
- * Em uma versão futura, este arquivo utilizará fetch()
- * para se comunicar com a API.
+ * O Controller não precisa conhecer os detalhes
+ * do fetch(), dos cabeçalhos ou da conversão do JSON.
  */
 const AlunoService = {
+    /*
+     * Endereço base dos endpoints relacionados
+     * aos alunos.
+     */
+    URL_API: "http://localhost:3000/api/alunos",
 
     /*
-     * Nome utilizado para armazenar os alunos
-     * dentro do localStorage.
-     *
-     * É importante utilizar um nome específico para
-     * evitar conflito com dados de outras aplicações.
+     * Processa uma resposta recebida da API.
      */
-    CHAVE_STORAGE: "sistema-academico-ds2:alunos",
+    async processarResposta(resposta) {
+        let resultado;
 
-    /*
-     * Recupera os alunos armazenados.
-     */
-    listar() {
-
-        /*
-         * getItem() recupera o texto associado à chave.
-         *
-         * Se a chave não existir, o resultado será null.
-         */
-        const textoJson = localStorage.getItem(
-            AlunoService.CHAVE_STORAGE
-        );
-
-        /*
-         * Se não houver nada armazenado, devolve
-         * um array vazio.
-         */
-        if (textoJson === null) {
-            return [];
-        }
-
-        /*
-         * try permite tentar executar uma operação
-         * que pode gerar erro.
-         *
-         * JSON.parse() gera erro quando recebe
-         * um JSON inválido.
-         */
         try {
-            const dados = JSON.parse(textoJson);
-
             /*
-             * Confirma se o resultado é realmente um array.
+             * Converte o JSON recebido em
+             * um objeto JavaScript.
              */
-            if (!Array.isArray(dados)) {
-                return [];
-            }
-
-            return dados;
-
+            resultado = await resposta.json();
         } catch (erro) {
-
             /*
-             * Se o conteúdo estiver corrompido,
-             * remove o valor inválido.
+             * Este erro ocorrerá se o servidor não
+             * devolver uma resposta JSON válida.
              */
-            localStorage.removeItem(
-                AlunoService.CHAVE_STORAGE
+            throw new Error(
+                "O servidor retornou uma resposta inválida."
             );
-
-            return [];
-        }
-    },
-
-    /*
-     * Converte o array para JSON e salva no navegador.
-     */
-    salvar(alunos) {
-        const textoJson = JSON.stringify(alunos);
-
-        localStorage.setItem(
-            AlunoService.CHAVE_STORAGE,
-            textoJson
-        );
-    },
-
-    /*
-     * Coordena o cadastro de um aluno.
-     */
-    cadastrar(dados) {
-
-        /*
-         * Recupera a lista atual.
-         */
-        const alunos = AlunoService.listar();
-
-        /*
-         * Solicita ao Model a validação e a criação.
-         */
-        const resultado = AlunoModel.criar(
-            dados,
-            alunos
-        );
-
-        /*
-         * Se o Model identificar um problema,
-         * devolve o mesmo resultado ao Controller.
-         */
-        if (!resultado.sucesso) {
-            return resultado;
         }
 
         /*
-         * Adiciona o aluno criado ao array.
+         * A propriedade ok será verdadeira para
+         * respostas entre 200 e 299.
          */
-        alunos.push(resultado.aluno);
+        if (!resposta.ok) {
+            /*
+             * Utiliza a mensagem enviada pela API.
+             *
+             * Se ela não existir, utiliza uma
+             * mensagem genérica.
+             */
+            throw new Error(
+                resultado.mensagem ||
+                "Não foi possível concluir a operação."
+            );
+        }
 
         /*
-         * Salva o array atualizado.
-         */
-        AlunoService.salvar(alunos);
-
-        /*
-         * Devolve o resultado ao Controller.
+         * Devolve o objeto JavaScript para quem
+         * chamou o Service.
          */
         return resultado;
     },
 
     /*
-     * Remove toda a lista armazenada.
+     * Executa uma requisição e trata possíveis
+     * problemas de conexão com o backend.
      */
-    limpar() {
-        localStorage.removeItem(
-            AlunoService.CHAVE_STORAGE
-        );
+    async requisitar(opcoes = {}) {
+        let resposta;
+
+        try {
+            /*
+             * fetch() envia a requisição para a API.
+             *
+             * O segundo argumento contém as opções,
+             * como método, cabeçalhos e corpo.
+             */
+            resposta = await fetch(
+                AlunoService.URL_API,
+                opcoes
+            );
+        } catch (erro) {
+            /*
+             * Esse bloco será executado quando não for
+             * possível estabelecer comunicação.
+             *
+             * Exemplos:
+             *
+             * - servidor desligado;
+             * - endereço incorreto;
+             * - problema de rede;
+             * - bloqueio de CORS.
+             */
+            throw new Error(
+                "Não foi possível conectar ao servidor."
+            );
+        }
+
+        /*
+         * Depois de receber a resposta, encaminhamos
+         * seu processamento para outro método.
+         */
+        return AlunoService.processarResposta(resposta);
+    },
+
+    /*
+     * Solicita a lista de alunos.
+     *
+     * Como GET é o método padrão do fetch(),
+     * poderíamos omitir a propriedade method.
+     * Ela foi mantida para deixar o código explícito.
+     */
+    async listar() {
+        const resultado = await AlunoService.requisitar({
+            method: "GET",
+
+            /*
+             * Informa que o cliente espera receber JSON.
+             */
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+
+        /*
+         * A API retorna:
+         *
+         * {
+         *     total: 1,
+         *     dados: [...]
+         * }
+         *
+         * O Service devolve somente o array.
+         */
+        return resultado.dados;
+    },
+
+    /*
+     * Envia os dados de um novo aluno para a API.
+     */
+    async cadastrar(aluno) {
+        return AlunoService.requisitar({
+            /*
+             * POST indica a criação de um recurso.
+             */
+            method: "POST",
+
+            /*
+             * O Content-Type informa que o corpo
+             * da requisição está em JSON.
+             */
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            },
+
+            /*
+             * JSON.stringify() converte o objeto
+             * JavaScript para texto JSON.
+             */
+            body: JSON.stringify(aluno)
+        });
     }
 };

@@ -257,3 +257,34 @@ pre {
 .botao-secundario:hover {
     background-color: #475569;
 }
+
+/*
+ * Aparência do botão enquanto uma requisição
+ * estiver sendo processada.
+ */
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/*
+ * Mensagem informativa utilizada durante
+ * o carregamento ou envio de dados.
+ */
+.mensagem.informacao {
+    color: #1d4ed8;
+}
+
+/*
+ * Mensagem apresentada em operações concluídas.
+ */
+.mensagem.sucesso {
+    color: #15803d;
+}
+
+/*
+ * Mensagem apresentada quando ocorre um erro.
+ */
+.mensagem.erro {
+    color: #b91c1c;
+}
