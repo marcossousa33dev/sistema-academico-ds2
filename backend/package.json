@@ -15,5 +15,9 @@
     "json"
   ],
   "author": "Aline Franscisca e Marcos Costa",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
 }
