@@ -1,16 +1,17 @@
 /*
- * O Controller coordena:
- *
- * - Model;
- * - View;
- * - Service.
+ * O Controller coordena Model, View e Service.
  */
 const AlunoController = {
     /*
-     * Inicializa a aplicação.
+     * Armazena o ID do aluno que está sendo editado.
      *
-     * A função é assíncrona porque, ao abrir a página,
-     * consultaremos os alunos no backend.
+     * null significa que o formulário está
+     * no modo de cadastro.
+     */
+    idEmEdicao: null,
+
+    /*
+     * Inicializa a aplicação.
      */
     async iniciar() {
         /*
@@ -19,25 +20,35 @@ const AlunoController = {
         AlunoView.iniciar();
 
         /*
-         * Configura o evento de envio do formulário.
+         * Configura o envio do formulário.
          */
         AlunoView.configurarFormulario(
-            AlunoController.cadastrar
+            AlunoController.salvar
         );
 
         /*
-         * Informa que os dados estão sendo carregados.
+         * Configura o botão de cancelamento.
          */
+        AlunoView.configurarBotaoCancelar(
+            AlunoController.cancelarEdicao
+        );
+
+        /*
+         * Configura os botões da tabela.
+         */
+        AlunoView.configurarAcoesTabela(
+            AlunoController.iniciarEdicao,
+            AlunoController.excluir
+        );
+
         AlunoView.exibirMensagem(
             "Carregando alunos...",
             "informacao"
         );
 
         try {
-            /*
-             * Consulta os alunos existentes no servidor.
-             */
-            await AlunoController.atualizarVisualizacao();
+            await AlunoController
+                .atualizarVisualizacao();
 
             AlunoView.exibirMensagem(
                 "Dados carregados com sucesso.",
@@ -52,30 +63,26 @@ const AlunoController = {
     },
 
     /*
-     * Executa o cadastro do aluno.
+     * Cadastra ou atualiza um aluno.
+     *
+     * A operação depende do valor armazenado
+     * em idEmEdicao.
      */
-    async cadastrar(evento) {
-        /*
-         * Evita o recarregamento da página.
-         */
+    async salvar(evento) {
         evento.preventDefault();
 
         /*
-         * Solicita à View os valores do formulário.
+         * Lê os dados do formulário.
          */
-        const dadosInformados = AlunoView.lerDados();
+        const dadosInformados =
+            AlunoView.lerDados();
 
         /*
-         * Encaminha os dados para a validação inicial.
+         * Valida os dados no Model do frontend.
          */
-        const validacao = AlunoModel.validar(
-            dadosInformados
-        );
+        const validacao =
+            AlunoModel.validar(dadosInformados);
 
-        /*
-         * Interrompe o processo caso a validação
-         * do frontend encontre um problema.
-         */
         if (!validacao.sucesso) {
             AlunoView.exibirMensagem(
                 validacao.mensagem,
@@ -85,77 +92,211 @@ const AlunoController = {
             return;
         }
 
-        /*
-         * Desabilita temporariamente o botão.
-         */
         AlunoView.alterarEstadoFormulario(true);
 
-        AlunoView.exibirMensagem(
-            "Enviando dados para o servidor...",
-            "informacao"
-        );
-
         try {
+            let resultado;
+
             /*
-             * Envia o aluno para o backend.
+             * Se idEmEdicao for null, realizamos
+             * um novo cadastro.
              */
-            const resultado =
-                await AlunoService.cadastrar(
-                    validacao.dados
+            if (AlunoController.idEmEdicao === null) {
+                AlunoView.exibirMensagem(
+                    "Cadastrando aluno...",
+                    "informacao"
                 );
 
-            /*
-             * Consulta novamente a lista do servidor.
-             */
-            await AlunoController.atualizarVisualizacao();
+                resultado =
+                    await AlunoService.cadastrar(
+                        validacao.dados
+                    );
+            } else {
+                /*
+                 * Se existe um ID, atualizamos
+                 * o aluno selecionado.
+                 */
+                AlunoView.exibirMensagem(
+                    "Atualizando aluno...",
+                    "informacao"
+                );
+
+                resultado =
+                    await AlunoService.atualizar(
+                        AlunoController.idEmEdicao,
+                        validacao.dados
+                    );
+            }
 
             /*
-             * Limpa o formulário depois do sucesso.
+             * Atualiza a tabela depois da operação.
              */
+            await AlunoController
+                .atualizarVisualizacao();
+
+            /*
+             * Limpa o modo de edição.
+             */
+            AlunoController.idEmEdicao = null;
+
             AlunoView.limparFormulario();
+            AlunoView.alterarModoEdicao(false);
 
             /*
-             * Apresenta a mensagem devolvida pela API.
+             * Mostra a mensagem enviada pela API.
              */
             AlunoView.exibirMensagem(
                 resultado.mensagem,
                 "sucesso"
             );
         } catch (erro) {
-            /*
-             * Apresenta erros de validação da API,
-             * RA duplicado ou falha de conexão.
-             */
             AlunoView.exibirMensagem(
                 erro.message,
                 "erro"
             );
         } finally {
-            /*
-             * O bloco finally sempre será executado,
-             * independentemente do sucesso ou do erro.
-             */
             AlunoView.alterarEstadoFormulario(false);
         }
     },
 
     /*
-     * Consulta os alunos na API e atualiza a View.
+     * Inicia a edição de um aluno.
+     */
+    async iniciarEdicao(id) {
+        AlunoView.exibirMensagem(
+            "Carregando dados do aluno...",
+            "informacao"
+        );
+
+        try {
+            /*
+             * Consulta os dados completos na API.
+             *
+             * GET /api/alunos/:id
+             */
+            const aluno =
+                await AlunoService.buscarPorId(id);
+
+            /*
+             * Guarda o ID selecionado.
+             */
+            AlunoController.idEmEdicao = id;
+
+            /*
+             * Preenche o formulário.
+             */
+            AlunoView.preencherFormulario(aluno);
+
+            /*
+             * Coloca o formulário no modo de edição.
+             */
+            AlunoView.alterarModoEdicao(true);
+
+            /*
+             * Move a página até o formulário.
+             */
+            AlunoView.irParaFormulario();
+
+            AlunoView.exibirMensagem(
+                "Altere os dados e clique em Atualizar aluno.",
+                "informacao"
+            );
+        } catch (erro) {
+            AlunoView.exibirMensagem(
+                erro.message,
+                "erro"
+            );
+        }
+    },
+
+    /*
+     * Cancela a edição atual.
+     */
+    cancelarEdicao(evento) {
+        /*
+         * O encadeamento opcional permite chamar
+         * esse método mesmo sem receber um evento.
+         */
+        evento?.preventDefault();
+
+        AlunoController.idEmEdicao = null;
+
+        AlunoView.limparFormulario();
+        AlunoView.alterarModoEdicao(false);
+
+        AlunoView.exibirMensagem(
+            "Edição cancelada.",
+            "informacao"
+        );
+    },
+
+    /*
+     * Exclui um aluno.
+     */
+    async excluir(id) {
+        /*
+         * Pergunta ao usuário se deseja continuar.
+         */
+        const confirmou =
+            AlunoView.confirmarExclusao();
+
+        if (!confirmou) {
+            return;
+        }
+
+        AlunoView.exibirMensagem(
+            "Excluindo aluno...",
+            "informacao"
+        );
+
+        try {
+            /*
+             * Executa:
+             *
+             * DELETE /api/alunos/:id
+             */
+            const resultado =
+                await AlunoService.remover(id);
+
+            /*
+             * Se o aluno excluído estava em edição,
+             * cancelamos o modo de edição.
+             */
+            if (
+                AlunoController.idEmEdicao === id
+            ) {
+                AlunoController.idEmEdicao = null;
+
+                AlunoView.limparFormulario();
+                AlunoView.alterarModoEdicao(false);
+            }
+
+            /*
+             * Consulta novamente a lista.
+             */
+            await AlunoController
+                .atualizarVisualizacao();
+
+            AlunoView.exibirMensagem(
+                resultado.mensagem,
+                "sucesso"
+            );
+        } catch (erro) {
+            AlunoView.exibirMensagem(
+                erro.message,
+                "erro"
+            );
+        }
+    },
+
+    /*
+     * Consulta a API e atualiza a tabela e o JSON.
      */
     async atualizarVisualizacao() {
-        /*
-         * Aguarda o Service consultar o backend.
-         */
-        const alunos = await AlunoService.listar();
+        const alunos =
+            await AlunoService.listar();
 
-        /*
-         * Atualiza a tabela.
-         */
         AlunoView.exibirLista(alunos);
-
-        /*
-         * Atualiza a apresentação em JSON.
-         */
         AlunoView.exibirJson(alunos);
     }
 };
