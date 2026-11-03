@@ -1,29 +1,23 @@
 /*
- * Importa o Express para criar um Router.
+ * Importa o Express.
  */
 import express from "express";
 
 /*
- * Importa o Controller de alunos.
+ * Importa o Controller.
  */
 import AlunoController
     from "../controller/aluno-controller.js";
 
 /*
- * Cria um roteador específico para alunos.
- *
- * Um Router pode ser entendido como um
- * pequeno módulo de rotas.
+ * Cria o Router dos alunos.
  */
 const router = express.Router();
 
 /*
- * Rota de listagem.
- *
- * Como o Router será registrado no caminho
- * /api/alunos, esta rota representará:
- *
  * GET /api/alunos
+ *
+ * Lista todos os alunos.
  */
 router.get(
     "/",
@@ -31,11 +25,19 @@ router.get(
 );
 
 /*
- * Rota de cadastro.
+ * GET /api/alunos/:id
  *
- * Esta rota representará:
- *
+ * Consulta um aluno pelo ID.
+ */
+router.get(
+    "/:id",
+    AlunoController.buscarPorId
+);
+
+/*
  * POST /api/alunos
+ *
+ * Cadastra um aluno.
  */
 router.post(
     "/",
@@ -43,6 +45,26 @@ router.post(
 );
 
 /*
- * Exporta o Router para o app.js.
+ * PUT /api/alunos/:id
+ *
+ * Atualiza todos os campos editáveis do aluno.
+ */
+router.put(
+    "/:id",
+    AlunoController.atualizar
+);
+
+/*
+ * DELETE /api/alunos/:id
+ *
+ * Exclui um aluno.
+ */
+router.delete(
+    "/:id",
+    AlunoController.remover
+);
+
+/*
+ * Exporta o Router.
  */
 export default router;

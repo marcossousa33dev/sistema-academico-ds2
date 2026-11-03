@@ -1,29 +1,21 @@
 /*
- * Importa o Model responsável pelos dados
- * e pelas regras dos alunos.
+ * Importa o Model de alunos.
  */
 import AlunoModel from "../model/aluno-model.js";
 
 /*
- * O Controller recebe as requisições encaminhadas
- * pelo Router, chama o Model e produz a resposta.
+ * O Controller coordena as requisições,
+ * chama o Model e produz as respostas.
  */
 const AlunoController = {
     /*
      * Lista todos os alunos.
      *
-     * Endpoint:
      * GET /api/alunos
      */
     listar(req, res) {
-        /*
-         * Solicita a lista ao Model.
-         */
         const alunos = AlunoModel.listar();
 
-        /*
-         * Envia uma resposta com status 200.
-         */
         return res.status(200).json({
             total: alunos.length,
             dados: alunos
@@ -31,43 +23,141 @@ const AlunoController = {
     },
 
     /*
+     * Consulta um aluno pelo ID.
+     *
+     * GET /api/alunos/:id
+     */
+    buscarPorId(req, res) {
+        /*
+         * Recupera o ID enviado na URL.
+         */
+        const id = req.params.id;
+
+        /*
+         * Solicita a consulta ao Model.
+         */
+        const resultado =
+            AlunoModel.buscarPorId(id);
+
+        /*
+         * Trata o aluno não encontrado.
+         */
+        if (!resultado.sucesso) {
+            return res
+                .status(resultado.status)
+                .json({
+                    sucesso: false,
+                    mensagem: resultado.mensagem
+                });
+        }
+
+        /*
+         * Envia o aluno encontrado.
+         */
+        return res.status(200).json({
+            sucesso: true,
+            dados: resultado.aluno
+        });
+    },
+
+    /*
      * Cadastra um aluno.
      *
-     * Endpoint:
      * POST /api/alunos
      */
     cadastrar(req, res) {
         /*
-         * express.json() já converteu o JSON
-         * recebido para um objeto JavaScript.
-         *
-         * O resultado está disponível em req.body.
+         * O corpo JSON está disponível
+         * na propriedade req.body.
+         */
+        const dados = req.body;
+
+        const resultado =
+            AlunoModel.cadastrar(dados);
+
+        if (!resultado.sucesso) {
+            return res
+                .status(resultado.status)
+                .json({
+                    sucesso: false,
+                    mensagem: resultado.mensagem
+                });
+        }
+
+        return res.status(201).json({
+            sucesso: true,
+            mensagem: "Aluno cadastrado com sucesso.",
+            dados: resultado.aluno
+        });
+    },
+
+    /*
+     * Atualiza um aluno.
+     *
+     * PUT /api/alunos/:id
+     */
+    atualizar(req, res) {
+        /*
+         * O ID vem da URL.
+         */
+        const id = req.params.id;
+
+        /*
+         * Os novos dados vêm do corpo JSON.
          */
         const dados = req.body;
 
         /*
-         * Encaminha os dados ao Model.
+         * Solicita a atualização ao Model.
          */
-        const resultado = AlunoModel.cadastrar(dados);
+        const resultado =
+            AlunoModel.atualizar(id, dados);
 
-        /*
-         * Verifica se o Model encontrou
-         * algum problema de validação.
-         */
         if (!resultado.sucesso) {
-            return res.status(resultado.status).json({
-                sucesso: false,
-                mensagem: resultado.mensagem
-            });
+            return res
+                .status(resultado.status)
+                .json({
+                    sucesso: false,
+                    mensagem: resultado.mensagem
+                });
         }
 
-        /*
-         * Retorna o status 201 quando o
-         * aluno é criado com sucesso.
-         */
-        return res.status(201).json({
+        return res.status(200).json({
             sucesso: true,
-            mensagem: "Aluno cadastrado com sucesso.",
+            mensagem: "Aluno atualizado com sucesso.",
+            dados: resultado.aluno
+        });
+    },
+
+    /*
+     * Exclui um aluno.
+     *
+     * DELETE /api/alunos/:id
+     */
+    remover(req, res) {
+        /*
+         * Recupera o ID informado na URL.
+         */
+        const id = req.params.id;
+
+        /*
+         * Solicita a exclusão ao Model.
+         */
+        const resultado =
+            AlunoModel.remover(id);
+
+        if (!resultado.sucesso) {
+            return res
+                .status(resultado.status)
+                .json({
+                    sucesso: false,
+                    mensagem: resultado.mensagem
+                });
+        }
+
+        return res.status(200).json({
+            sucesso: true,
+            mensagem: "Aluno excluído com sucesso.",
             dados: resultado.aluno
         });
     }
